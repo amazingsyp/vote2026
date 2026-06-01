@@ -46,8 +46,6 @@ git push
 # GitHub 저장소 Settings → Pages → Source: main / root
 ```
 
-Kakao 지도 SDK는 도메인 제한 JavaScript 키를 사용한다. 배포 도메인을 [Kakao Developers](https://developers.kakao.com) 콘솔의 Web 플랫폼에 등록해야 한다.
-
 ## 구조
 
 ```
