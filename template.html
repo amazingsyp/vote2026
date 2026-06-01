@@ -443,8 +443,12 @@ const App = (() => {
   // ---------- address ----------
   // 도로명/지번 주소 -> 좌표 -> 행정동(Kakao SDK). 실패해도 법정동으로 진행.
   function resolveHdong(addr, cb){
+    let done=false;
+    const finish=()=>{ if(done) return; done=true; clearTimeout(timer); cb(); };
+    // Kakao 무응답/지연 시에도 반드시 진행(화면 멈춤 방지)
+    const timer=setTimeout(finish, 2500);
     try{
-      if(!window.kakao || !kakao.maps || !kakao.maps.services){ return cb(); }
+      if(!window.kakao || !kakao.maps || !kakao.maps.services){ return finish(); }
       const g=new kakao.maps.services.Geocoder();
       g.addressSearch(addr,(res,st)=>{
         if(st===kakao.maps.services.Status.OK && res[0]){
@@ -453,11 +457,11 @@ const App = (() => {
               const h=rs.find(r=>r.region_type==='H');
               if(h){ state.addr.hdong=h.region_3depth_name; }
             }
-            cb();
+            finish();
           });
-        } else cb();
+        } else finish();
       });
-    }catch(e){ cb(); }
+    }catch(e){ finish(); }
   }
   function finishAddr(d){
     $('addr-label').textContent = `${d.sido} ${d.sigungu} ${d.bname||''}`.trim()
@@ -477,8 +481,8 @@ const App = (() => {
         resolveHdong(d.roadAddress||d.address, ()=>finishAddr(d));
       },
       onresize:(sz)=>{ el.style.height=sz.height+'px'; },
-      width:'100%', height:'100%'
-    }).embed(el);
+      width:'100%', height:'100%', autoClose:false
+    }).embed(el, { autoClose:false });
   }
 
   return { start, next, prev, show, openAddr, closeAddr, _state:state };
