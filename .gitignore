@@ -1,0 +1,9 @@
+# 중간 산출물 (재생성 가능)
+_workspace/
+__pycache__/
+*.pyc
+.DS_Store
+
+# 절대 커밋 금지: API 서비스 키
+*.key
+secret*

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>제9회 지방선거 투표 도우미</title>
+<meta name="description" content="정치성향 진단 후 내 주소지 후보와의 일치도를 보여주는 제9회 전국동시지방선거 도우미">
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#ffffff; --soft:#eef1f5; --fg:#1a1c25; --mut:#737a86;
+    --line:#e7eaf0; --accent:#12b886; --accent-d:#0ca678;
+    --me:#12b886; --cand:#ff6b6b; --good:#0ca678; --warn:#f59f1a; --bad:#fa5252;
+    --r:16px; --maxw:560px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
+    line-height:1.55;-webkit-text-size-adjust:100%}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:18px 16px calc(36px + env(safe-area-inset-bottom))}
+  h1{font-size:24px;font-weight:800;margin:6px 0 6px;letter-spacing:-.5px}
+  h2{font-size:18px;font-weight:700;margin:22px 0 8px}
+  .mut{color:var(--mut)}
+  .sm{font-size:13px}
+  .xs{font-size:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin:12px 0;
+    box-shadow:0 1px 2px rgba(20,22,35,.04),0 8px 20px rgba(20,22,35,.05)}
+  .pill{display:inline-block;background:var(--soft);border-radius:999px;
+    padding:5px 12px;font-size:12px;color:var(--mut);margin:2px 4px 2px 0;font-weight:600}
+  .btn{display:block;width:100%;border:none;border-radius:14px;padding:16px;font-size:16px;
+    font-weight:700;color:#fff;background:var(--accent);
+    cursor:pointer;margin-top:10px;-webkit-tap-highlight-color:transparent;box-shadow:0 6px 18px rgba(18,184,134,.28)}
+  .btn:active{transform:translateY(1px)}
+  .btn.sec{background:#fff;border:1px solid var(--line);color:var(--fg);font-weight:600;box-shadow:none}
+  .btn:disabled{opacity:.4;box-shadow:none}
+  .progress{height:8px;background:var(--soft);border-radius:999px;overflow:hidden;margin:8px 0 22px}
+  .progress > i{display:block;height:100%;background:var(--accent);transition:width .25s ease}
+  .q-text{font-size:21px;font-weight:700;letter-spacing:-.4px;margin:12px 0 20px;min-height:80px;line-height:1.4}
+  .opts{display:flex;flex-direction:column;gap:10px}
+  .opt{display:flex;align-items:center;gap:13px;background:#fff;border:1.5px solid var(--line);
+    border-radius:14px;padding:15px;font-size:16px;color:var(--fg);cursor:pointer;text-align:left;font-weight:500}
+  .opt:active{transform:translateY(1px)}
+  .opt.sel{border-color:var(--accent);background:#f0fbf7}
+  .dot{width:18px;height:18px;border-radius:50%;flex:none;border:2px solid #cfd4dd}
+  .opt.sel .dot{background:var(--accent);border-color:var(--accent);box-shadow:inset 0 0 0 3px #fff}
+  .navrow{display:flex;gap:10px;margin-top:18px}
+  .navrow .btn{margin-top:0}
+  .axis-row{display:flex;align-items:center;gap:10px;margin:12px 0 2px}
+  .axis-row .lab{flex:none;width:62px;font-size:13px;color:var(--fg);font-weight:600}
+  .bar{position:relative;flex:1;height:10px;background:var(--soft);border-radius:999px}
+  .bar > i{position:absolute;top:-4px;width:18px;height:18px;border-radius:50%;background:var(--me);
+    transform:translateX(-50%);box-shadow:0 2px 6px rgba(18,184,134,.4);border:2px solid #fff}
+  .bar .mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:#d8dce4}
+  .ends{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin:0 0 4px}
+  .grid{display:grid;grid-template-columns:1fr;gap:12px}
+  .cand{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px;box-shadow:0 1px 3px rgba(20,22,35,.05)}
+  .cand .top{display:flex;gap:12px;align-items:center}
+  .ava{width:48px;height:48px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:18px;color:#fff}
+  .num{font-variant-numeric:tabular-nums;font-weight:800}
+  .match{margin-left:auto;text-align:right;flex:none}
+  .match b{font-size:24px;font-weight:800}
+  .ringwrap{display:flex;gap:14px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  .reasons{font-size:13px;margin-top:8px}
+  .tag{display:inline-block;border-radius:8px;padding:3px 9px;font-size:12px;margin:2px 4px 2px 0;font-weight:600}
+  .tag.g{background:#e7f8f1;color:#0ca678}
+  .tag.b{background:#ffecec;color:#e8484b}
+  .badge{font-size:11px;background:var(--soft);border-radius:6px;padding:3px 8px;color:var(--mut);font-weight:600}
+  details{margin-top:10px}
+  summary{cursor:pointer;color:var(--accent-d);font-size:13px;font-weight:600}
+  .sel-input{width:100%;background:#fff;border:1.5px solid var(--line);color:var(--fg);
+    border-radius:12px;padding:14px;font-size:15px;margin-top:8px;font-weight:500}
+  .race{margin:0 0 14px;padding:18px;background:#fff;border:1px solid var(--line);border-radius:18px;
+    box-shadow:0 2px 12px rgba(20,22,35,.05)}
+  .race-head{display:flex;align-items:center;gap:11px;margin:0 0 14px;padding-bottom:13px;border-bottom:2px solid var(--soft)}
+  .race-bar{width:6px;align-self:stretch;min-height:30px;border-radius:6px;flex:none}
+  .race-head h3{font-size:20px;font-weight:800;margin:0;letter-spacing:-.4px;flex:1;line-height:1.2}
+  .race-cnt{font-size:12px;font-weight:700;color:#fff;border-radius:999px;padding:4px 11px;flex:none}
+  .hidden{display:none}
+  .center{text-align:center}
+  .notice{font-size:12.5px;color:var(--mut);background:#fff;border:1px solid var(--line);
+    border-radius:14px;padding:14px;margin:12px 0;line-height:1.6}
+  a{color:var(--accent-d)}
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--mut);align-items:center}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+  footer{margin-top:28px;text-align:center;font-size:11px;color:var(--mut);line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- INTRO -->
+  <section id="screen-intro">
+    <h1>🗳️ 제9회 지방선거 투표 도우미</h1>
+    <p class="mut sm">정치성향을 진단하고, 내 주소지 후보와 얼마나 맞는지 보여드려요.</p>
+    <div class="card">
+      <p class="sm" style="margin:0">① 18개 질문으로 5가지 정치 성향을 측정<br>② 주소 입력 → 내 선거구 후보 자동 표시<br>③ 후보별 성향 일치도와 근거 확인</p>
+    </div>
+    <div class="notice">🔒 모든 계산은 <b>당신의 기기 안에서만</b> 이뤄집니다. 주소·응답은 어디에도 전송·저장되지 않습니다.
+      후보 성향은 공약·정당 정책 기반 <b>추정</b>이며 참고용입니다. 출처: 중앙선거관리위원회(data.go.kr).</div>
+    <button class="btn" onclick="App.start()">시작하기</button>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="screen-quiz" class="hidden">
+    <div class="sm mut"><span id="q-idx">1</span> / <span id="q-total">18</span></div>
+    <div class="progress"><i id="q-bar" style="width:0%"></i></div>
+    <div class="q-text" id="q-text"></div>
+    <div class="opts" id="q-opts"></div>
+    <div class="navrow">
+      <button class="btn sec" style="flex:0 0 96px" onclick="App.prev()">이전</button>
+      <button class="btn" id="q-next" onclick="App.next()" disabled>다음</button>
+    </div>
+  </section>
+
+  <!-- RESULT (성향) -->
+  <section id="screen-result" class="hidden">
+    <h1>나의 정치 성향</h1>
+    <div class="card center">
+      <div id="radar-me"></div>
+      <div class="legend center" style="justify-content:center;margin-top:8px"><span><i style="background:var(--me)"></i>나</span></div>
+    </div>
+    <div class="card" id="leaning" style="text-align:center;font-size:15px"></div>
+    <div class="card" id="axis-bars"></div>
+    <h2>이제 내 후보를 볼까요?</h2>
+    <p class="sm mut">주소지를 입력하면 해당 선거구에서 투표할 후보들과의 일치도를 보여드려요.</p>
+    <button class="btn" onclick="App.openAddr()">주소 입력하고 후보 보기</button>
+    <button class="btn sec" onclick="App.start()">설문 다시 하기</button>
+  </section>
+
+  <!-- CANDIDATES -->
+  <section id="screen-cands" class="hidden">
+    <h1>내 투표 가이드</h1>
+    <div class="card" style="display:flex;align-items:center;gap:12px;padding:14px 16px">
+      <div style="flex:1"><div class="xs mut">선택한 주소</div><div id="addr-label" style="font-weight:700"></div></div>
+      <button class="btn sec" style="width:auto;margin:0;padding:9px 14px;font-size:14px" onclick="App.openAddr()">변경</button>
+    </div>
+    <div class="card" style="border:2px solid #c9f0e2;background:#f4fdfa">
+      <div style="font-size:18px;font-weight:800;margin-bottom:2px">🏁 한눈에 보기</div>
+      <div class="xs mut" style="margin-bottom:8px">선거별로 가장 잘 맞는 후보예요 · 참고용</div>
+      <div id="summary"></div>
+    </div>
+    <div class="legend" style="margin:18px 2px 8px"><span><i style="background:var(--me)"></i>나</span><span><i style="background:var(--cand)"></i>후보</span><span class="xs">· 일치도 높은 순</span></div>
+    <div id="races"></div>
+    <button class="btn sec" onclick="App.show('screen-result')">← 성향 결과로</button>
+    <footer>중앙선거관리위원회 공공데이터(후보자·선거공약·정당정책) 기반<br>성향 점수는 추정치이며 참고용입니다 · 제9회 전국동시지방선거 · 2026-06-03</footer>
+  </section>
+
+</div>
+
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" async></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=0a72973fc7bb485fcee0a3391d04182f&libraries=services&autoload=false"></script>
+<script>window.addEventListener('load',function(){ if(window.kakao&&kakao.maps){ kakao.maps.load(function(){ window.__kakaoReady=true; }); } });</script>
+<script id="appdata" type="application/json">/*__APPDATA__*/</script>
+<script>
+const App = (() => {
+  const DATA = JSON.parse(document.getElementById('appdata').textContent);
+  const AX = DATA.axes;                  // [{key,name,leftLabel,rightLabel}]
+  const AXK = AX.map(a => a.key);
+  const Q = DATA.questions, OPTS = DATA.options;
+  const DISTRICTS = DATA.districts || {};
+  const state = { ans: {}, i: 0, me: null, addr: null, picks: {}, autoPick: {} };
+
+  // ---------- helpers ----------
+  const $ = id => document.getElementById(id);
+  const norm = s => (s||'').replace(/\s/g,'');
+  function show(id){
+    ['screen-intro','screen-quiz','screen-result','screen-cands'].forEach(s=>$(s).classList.add('hidden'));
+    $(id).classList.remove('hidden'); window.scrollTo(0,0);
+  }
+
+  // ---------- quiz ----------
+  function start(){ state.ans={}; state.i=0; show('screen-quiz'); $('q-total').textContent=Q.length; render(); }
+  function render(){
+    const q = Q[state.i];
+    $('q-idx').textContent = state.i+1;
+    $('q-bar').style.width = ((state.i)/Q.length*100)+'%';
+    $('q-text').textContent = q.text;
+    const wrap = $('q-opts'); wrap.innerHTML='';
+    OPTS.forEach(o=>{
+      const sel = state.ans[q.id]===o.score;
+      const b=document.createElement('button');
+      b.className='opt'+(sel?' sel':''); b.innerHTML=`<span class="dot"></span><span>${o.label}</span>`;
+      b.onclick=()=>{ state.ans[q.id]=o.score; render(); };
+      wrap.appendChild(b);
+    });
+    $('q-next').disabled = !(q.id in state.ans);
+    $('q-next').textContent = state.i===Q.length-1 ? '결과 보기' : '다음';
+  }
+  function next(){
+    const q=Q[state.i]; if(!(q.id in state.ans)) return;
+    if(state.i<Q.length-1){ state.i++; render(); } else finish();
+  }
+  function prev(){ if(state.i>0){ state.i--; render(); } else show('screen-intro'); }
+
+  function score(){
+    const raw={}, max={};
+    AXK.forEach(k=>{raw[k]=0;max[k]=0;});
+    Q.forEach(q=>{
+      const s = state.ans[q.id] ?? 0;
+      raw[q.axis]  += s * q.weight * q.direction;
+      max[q.axis]  += 2 * q.weight;
+    });
+    const v={};
+    AXK.forEach(k=> v[k] = max[k]? Math.round(raw[k]/max[k]*100) : 0);
+    return v; // -100..100 per axis
+  }
+  function finish(){ state.me=score(); $('q-bar').style.width='100%'; renderResult(); show('screen-result'); }
+
+  // ---------- radar ----------
+  // vals: object{key:-100..100}; optional second overlay
+  function radar(me, cand){
+    const size=240, c=size/2, R=c-34, n=AXK.length;
+    const pt=(i,frac)=>{ const a=-Math.PI/2 + i*2*Math.PI/n;
+      return [c+Math.cos(a)*R*frac, c+Math.sin(a)*R*frac]; };
+    const poly=v=>AXK.map((k,i)=>pt(i,((v[k]+100)/200)).join(',')).join(' ');
+    let g='';
+    [0.25,0.5,0.75,1].forEach(f=>{ g+=`<polygon points="${AXK.map((k,i)=>pt(i,f).join(',')).join(' ')}" fill="none" stroke="#e6e9ef" stroke-width="1"/>`; });
+    AXK.forEach((k,i)=>{ const[x,y]=pt(i,1); g+=`<line x1="${c}" y1="${c}" x2="${x}" y2="${y}" stroke="#e6e9ef" stroke-width="1"/>`; });
+    // labels
+    AXK.forEach((k,i)=>{ const[x,y]=pt(i,1.16); const ax=AX[i];
+      g+=`<text x="${x}" y="${y}" fill="#737a86" font-size="11" font-weight="600" text-anchor="middle" dominant-baseline="middle">${ax.name}</text>`; });
+    if(cand) g+=`<polygon points="${poly(cand)}" fill="rgba(255,107,107,.20)" stroke="#ff6b6b" stroke-width="2.5"/>`;
+    g+=`<polygon points="${poly(me)}" fill="rgba(18,184,134,.18)" stroke="#12b886" stroke-width="2.5"/>`;
+    return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="max-width:100%">${g}</svg>`;
+  }
+  function leaningText(){
+    const arr=AX.map(a=>({a,v:state.me[a.key]})).sort((x,y)=>Math.abs(y.v)-Math.abs(x.v));
+    const parts=arr.slice(0,3).filter(x=>Math.abs(x.v)>=15).map(x=>{
+      const lab = x.v<0 ? x.a.leftLabel : x.a.rightLabel;
+      const deg = Math.abs(x.v)>=60?'뚜렷한 ':Math.abs(x.v)>=30?'':'약한 ';
+      return `${x.a.name}는 ${deg}<b>${lab}</b>`;
+    });
+    return parts.length? '당신은 '+parts.join(', ')+' 성향입니다.' : '대체로 중도 성향입니다.';
+  }
+  function renderResult(){
+    $('radar-me').innerHTML = radar(state.me);
+    $('leaning').innerHTML = leaningText();
+    const bars=$('axis-bars'); bars.innerHTML='';
+    AX.forEach(a=>{
+      const v=state.me[a.key], left=(v+100)/2; // 0..100 position
+      bars.insertAdjacentHTML('beforeend',
+        `<div class="axis-row"><div class="lab">${a.name}</div>
+          <div class="bar"><span class="mid"></span><i style="left:${left}%"></i></div></div>
+         <div class="ends"><span>${a.leftLabel}</span><span>${a.rightLabel}</span></div>`);
+    });
+  }
+
+  // ---------- matching ----------
+  function vecOf(c){ return c.av ? Object.fromEntries(AXK.map((k,i)=>[k,c.av[i]])) : null; }
+  // c.am(축 인덱스 배열)이 있으면 그 축들로만 거리 계산(예: 교육감=사회·정부역할만)
+  function maskKeys(c){ return (c.am && c.am.length) ? c.am.map(i=>AXK[i]) : AXK; }
+  function matchPct(me, c){
+    const v=vecOf(c); if(!v) return null;
+    const keys=maskKeys(c), maxd=Math.sqrt(keys.length*200*200);
+    let s=0; keys.forEach(k=>{ const d=me[k]-v[k]; s+=d*d; });
+    return Math.round((1 - Math.sqrt(s)/maxd)*100);
+  }
+  function reasons(me, c){
+    const v=vecOf(c); if(!v) return {g:[],b:[]};
+    const arr=maskKeys(c).map(k=>({k,name:AX.find(a=>a.key===k).name,d:Math.abs(me[k]-v[k])}));
+    arr.sort((a,b)=>a.d-b.d);
+    return { g:arr.slice(0,2).filter(x=>x.d<=70).map(x=>x.name),
+             b:arr.slice(-2).filter(x=>x.d>=60).map(x=>x.name).reverse() };
+  }
+
+  // ---------- region filtering ----------
+  // 선거 그룹 정의 (단위: 'sido' = 시도 전체, 'sigungu' = 시군구 단위, 'gu-pick'=구내 선거구 선택)
+  // scope: 'sido'=시도 전체 / 'muni'=자치단체(단체장·비례구의원, sgg로 매칭)
+  //        'pick'=행정구 내 세부 선거구 선택(시도의원·구의원, wiw로 매칭)
+  const RACES = [
+    {t:3,  name:'시·도지사',       scope:'sido', color:'#12b886'},
+    {t:11, name:'교육감',         scope:'sido', color:'#7c5cff'},
+    {t:4,  name:'구·시·군의 장',   scope:'muni', color:'#2f8bff'},
+    {t:5,  name:'시·도의원',       scope:'pick', color:'#ff8a3d'},
+    {t:6,  name:'구·시·군의원',    scope:'pick', color:'#e64980'},
+    {t:8,  name:'비례 시·도의원',   scope:'sido', color:'#00b3c4'},
+    {t:9,  name:'비례 구·시·군의원', scope:'muni', color:'#9775fa'},
+  ];
+  // Kakao sigungu("수원시 장안구")를 자치단체(수원시)와 행정구(수원시장안구)로 분해
+  function deriveRegion(sigungu){
+    const toks=(sigungu||'').trim().split(/\s+/).filter(Boolean);
+    if(toks.length>=2) return {muni:toks[0], admgu:toks.join('')};
+    return {muni:toks[0]||'', admgu:toks[0]||''};
+  }
+  const compat=(a,b)=> a&&b&&(a===b||a.startsWith(b)||b.startsWith(a));
+  // Kakao는 시도를 축약형("경기")으로 주고 데이터는 전체명("경기도") → 표준 키로 정규화
+  const SIDO_MAP={'서울':'서울','서울특별시':'서울','부산':'부산','부산광역시':'부산','대구':'대구','대구광역시':'대구','인천':'인천','인천광역시':'인천','광주':'광주','광주광역시':'광주','대전':'대전','대전광역시':'대전','울산':'울산','울산광역시':'울산','세종':'세종','세종특별자치시':'세종','경기':'경기','경기도':'경기','강원':'강원','강원도':'강원','강원특별자치도':'강원','충북':'충북','충청북도':'충북','충남':'충남','충청남도':'충남','전북':'전북','전라북도':'전북','전북특별자치도':'전북','전남':'전남','전라남도':'전남','경북':'경북','경상북도':'경북','경남':'경남','경상남도':'경남','제주':'제주','제주도':'제주','제주특별자치도':'제주'};
+  const canonSido=s=>{ s=(s||'').replace(/\s/g,''); return SIDO_MAP[s]||s; };
+  const normDong = s => (s||'').replace(/[\s·.]/g,'');
+  // 주소의 행정동(Kakao SDK)·법정동으로 의원 선거구 자동 판정 (검증된 시군구만 매핑에 존재)
+  function resolveDistrict(t){
+    if(!state.addr) return null;
+    const {sido,sigungu,bname,hdong}=state.addr;
+    const {muni,admgu}=deriveRegion(sigungu);
+    const cs=canonSido(sido);
+    const dongs=[hdong,bname].filter(Boolean).map(normDong);
+    for(const sg of [norm(admgu),norm(muni)]){
+      for(const d of dongs){
+        const ent=DISTRICTS[`${cs}|${sg}|${d}`];
+        if(ent && ent[String(t)]) return ent[String(t)];
+      }
+    }
+    return null;
+  }
+  function candidatesFor(race){
+    const {sido,sigungu}=state.addr;
+    const {muni,admgu}=deriveRegion(sigungu);
+    const ks=canonSido(sido);
+    let list=DATA.candidates.filter(c=>c.t===race.t && canonSido(c.sd)===ks);
+    if(race.scope==='muni') list=list.filter(c=>compat(norm(c.sgg),norm(muni)));
+    else if(race.scope==='pick') list=list.filter(c=>compat(norm(c.wiw),norm(admgu)));
+    return list;
+  }
+
+  // ---------- candidate UI ----------
+  function avatar(nm,color){ const ch=(nm||'?').trim().slice(-2);
+    return `<div class="ava" style="background:${color||'#aab0bd'}">${ch}</div>`; }
+  function candCard(c, me, color){
+    const pct=matchPct(me,c), v=vecOf(c), r=reasons(me,c);
+    const right = pct===null
+      ? `<div class="match"><span class="badge">분석 대기</span></div>`
+      : `<div class="match"><b style="color:${pct>=60?'var(--good)':pct>=40?'var(--warn)':'var(--bad)'}">${pct}%</b><div class="xs mut">일치</div></div>`;
+    const src = c.as==='pledge' ? `<span class="badge">공약 분석</span>`
+              : c.as==='party' ? `<span class="badge">정당 성향${c.lc?'·추정':''}</span>`
+              : `<span class="badge">성향 미상</span>`;
+    let pledges='';
+    if(c.pl && c.pl.length){
+      pledges=`<details><summary>공약 ${c.pl.length}개 보기</summary>`+
+        c.pl.map(p=>`<div class="sm" style="margin:6px 0"><b>${p.title||''}</b><br><span class="mut">${(p.body||'').slice(0,160)}</span></div>`).join('')+
+        `</details>`;
+    }
+    const rad = v ? `<div>${radar(me,v)}</div>` : '';
+    // 분석 불가 사유 안내
+    let noReason='';
+    if(!v){
+      const hasPl=c.pl && c.pl.length;
+      const why = (c.p==='무소속' && !hasPl) ? '무소속이라 정당 성향이 없고, 선관위에 제출된 공약도 없어 성향을 분석할 수 없어요.'
+                : (c.p==='무소속') ? '무소속 후보로 정당 성향이 없어, 공약을 직접 확인해 주세요.'
+                : !hasPl ? '제출된 공약이 없고 정당 성향 정보도 없어 분석할 수 없어요.'
+                : '성향 정보가 부족해 일치도를 계산할 수 없어요.';
+      noReason=`<div class="reasons"><div class="sm" style="background:var(--soft);border-radius:10px;padding:10px;color:var(--mut)">ℹ️ ${why}</div></div>`;
+    }
+    const tags = v ? `<div class="reasons">`+
+        r.g.map(x=>`<span class="tag g">✓ ${x} 비슷</span>`).join('')+
+        r.b.map(x=>`<span class="tag b">✕ ${x} 차이</span>`).join('')+
+        (c.am ? `<div class="xs mut" style="margin-top:4px">※ 공약이 다룬 ${maskKeys(c).map(k=>AX.find(a=>a.key===k).name).join('·')} 기준</div>`:'')+
+        `</div>` : noReason;
+    return `<div class="cand">
+      <div class="top">${avatar(c.nm,color)}
+        <div><div><span class="num">${c.n?('기호 '+c.n):''}</span> <b style="font-size:16px">${c.nm}</b></div>
+          <div class="sm mut">${c.p}${c.job?(' · '+c.job):''}</div>
+          <div style="margin-top:4px">${src}</div></div>
+        ${right}</div>
+      <div class="ringwrap">${rad}<div style="flex:1;min-width:140px">${tags}
+        ${c.car?`<div class="xs mut" style="margin-top:6px">${c.car}</div>`:''}</div></div>
+      ${pledges}
+    </div>`;
+  }
+
+  function raceHead(race,cnt){
+    return `<div class="race-head"><div class="race-bar" style="background:${race.color}"></div>`+
+      `<h3>${race.name}</h3>`+
+      (cnt!=null?`<span class="race-cnt" style="background:${race.color}">${cnt}명</span>`:'')+`</div>`;
+  }
+  function renderRaces(){
+    const me=state.me, host=$('races'); host.innerHTML='';
+    const summary=[];
+    RACES.forEach(race=>{
+      let list=candidatesFor(race);
+      if(!list.length) return;
+      const block=document.createElement('div'); block.className='race';
+      if(race.scope==='pick'){
+        // 구 내 세부 선거구. 1개뿐이면 자동 선택, 여러 개면 사용자 선택.
+        const sggs=[...new Set(list.map(c=>c.sgg))].sort();
+        const pid='pick-'+race.t;
+        // 주소(동)로 자동 판정 시도 (공백 차이 무시 정규화 비교)
+        if(state.picks[race.t]===undefined){
+          const auto=resolveDistrict(race.t);
+          const match=auto && sggs.find(s=>norm(s)===norm(auto));
+          if(match){ state.picks[race.t]=match; state.autoPick[race.t]=true; }
+        }
+        if(sggs.length<=1){
+          if(sggs.length===1) state.picks[race.t]=sggs[0];
+          block.innerHTML=raceHead(race,list.length)+`<div id="${pid}-out"></div>`;
+          host.appendChild(block); paintPick(race,list,me);
+        } else {
+          const autoNote = state.autoPick[race.t]
+            ? `<p class="sm" style="margin:0 0 6px;color:var(--accent-d);font-weight:600">📍 주소(${state.addr.bname})로 자동 선택됨 · 아래에서 변경 가능</p>`
+            : `<p class="sm mut" style="margin:0 0 6px">내 세부 선거구를 선택하세요 <span class="xs">(주소의 읍·면·동 기준)</span></p>`;
+          block.innerHTML=raceHead(race,null)+autoNote+
+            `<select class="sel-input" id="${pid}"><option value="">— 선거구 선택 —</option>
+            ${sggs.map(s=>`<option value="${s}"${state.picks[race.t]===s?' selected':''}>${s}</option>`).join('')}</select>
+            <div id="${pid}-out"></div>`;
+          host.appendChild(block);
+          const sel=$(pid);
+          sel.onchange=()=>{ state.picks[race.t]=sel.value; paintPick(race,list,me); buildSummary(); };
+          paintPick(race,list,me);
+        }
+      } else {
+        list=list.map(c=>({c,p:matchPct(me,c)})).sort((a,b)=>(b.p??-1)-(a.p??-1));
+        block.innerHTML=raceHead(race,list.length)+
+          `<div class="grid">${list.map(x=>candCard(x.c,me,race.color)).join('')}</div>`;
+        host.appendChild(block);
+        const best=list.find(x=>x.p!==null);
+        if(best) summary.push({race:race.name,c:best.c,p:best.p,color:race.color});
+      }
+    });
+    state._summaryBase=summary; buildSummary();
+  }
+  function paintPick(race,list,me){
+    const out=$('pick-'+race.t+'-out'); const sgg=state.picks[race.t];
+    if(!sgg){ out.innerHTML=`<p class="sm mut" style="margin-top:10px">선거구를 선택하면 후보가 표시됩니다.</p>`; return; }
+    let sub=list.filter(c=>c.sgg===sgg).map(c=>({c,p:matchPct(me,c)})).sort((a,b)=>(b.p??-1)-(a.p??-1));
+    out.innerHTML=`<div class="grid" style="margin-top:12px">${sub.map(x=>candCard(x.c,me,race.color)).join('')}</div>`;
+  }
+  function buildSummary(){
+    const rows=[...(state._summaryBase||[])];
+    RACES.filter(r=>r.scope==='pick').forEach(r=>{
+      const sgg=state.picks[r.t]; if(!sgg) return;
+      const list=candidatesFor(r).filter(c=>c.sgg===sgg).map(c=>({c,p:matchPct(state.me,c)})).sort((a,b)=>(b.p??-1)-(a.p??-1));
+      const best=list.find(x=>x.p!==null); if(best) rows.push({race:r.name,c:best.c,p:best.p,color:r.color});
+    });
+    const mc=p=> p>=60?'var(--good)':p>=40?'var(--warn)':'var(--bad)';
+    $('summary').innerHTML = rows.length
+      ? rows.map(x=>`<div style="display:flex;gap:11px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)">
+          <div style="flex:0 0 4px;align-self:stretch;border-radius:4px;background:${x.color||'#aab0bd'}"></div>
+          <div style="flex:0 0 88px;font-size:12px;font-weight:700;color:var(--mut)">${x.race}</div>
+          <div style="flex:1;min-width:0"><b>${x.c.n?('기호 '+x.c.n+' '):''}${x.c.nm}</b> <span class="sm mut">${x.c.p}</span></div>
+          <div style="font-weight:800;font-size:17px;color:${mc(x.p)}">${x.p}%</div></div>`).join('')
+      : `<p class="sm mut" style="margin:4px 0">아직 추천이 없습니다. 아래에서 선거구를 선택해 주세요.</p>`;
+  }
+
+  // ---------- address ----------
+  // 도로명/지번 주소 -> 좌표 -> 행정동(Kakao SDK). 실패해도 법정동으로 진행.
+  function resolveHdong(addr, cb){
+    try{
+      if(!window.kakao || !kakao.maps || !kakao.maps.services){ return cb(); }
+      const g=new kakao.maps.services.Geocoder();
+      g.addressSearch(addr,(res,st)=>{
+        if(st===kakao.maps.services.Status.OK && res[0]){
+          g.coord2RegionCode(res[0].x,res[0].y,(rs,st2)=>{
+            if(st2===kakao.maps.services.Status.OK){
+              const h=rs.find(r=>r.region_type==='H');
+              if(h){ state.addr.hdong=h.region_3depth_name; }
+            }
+            cb();
+          });
+        } else cb();
+      });
+    }catch(e){ cb(); }
+  }
+  function finishAddr(d){
+    $('addr-label').textContent = `${d.sido} ${d.sigungu} ${d.bname||''}`.trim()
+      + (state.addr.hdong && normDong(state.addr.hdong)!==normDong(d.bname) ? ` · ${state.addr.hdong}` : '');
+    state.picks={}; state.autoPick={};
+    renderRaces(); show('screen-cands');
+  }
+  function openAddr(){
+    if(!window.daum || !daum.Postcode){ alert('주소 검색 모듈을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.'); return; }
+    new daum.Postcode({ oncomplete:(d)=>{
+      state.addr={ sido:d.sido, sigungu:d.sigungu, bname:d.bname, full:d.roadAddress||d.address, hdong:null };
+      resolveHdong(d.roadAddress||d.address, ()=>finishAddr(d));
+    }}).open();
+  }
+
+  return { start, next, prev, show, openAddr, _state:state };
+})();
+</script>
+</body>
+</html>
